@@ -2,10 +2,15 @@ package com.springbootCohort.Module2.controllers;
 
 import com.springbootCohort.Module2.dto.EmployeeDTO;
 import com.springbootCohort.Module2.services.EmployeeService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/employees")
@@ -19,8 +24,11 @@ public class EmployeeController {
 
     //  Path variable -> mandatory
     @GetMapping(path = "/{employeeId}")
-    public EmployeeDTO getEmployeeById(@PathVariable Long employeeId) {
-        return employeeService.getEmployeeById(employeeId);
+    public ResponseEntity<EmployeeDTO> getEmployeeById(@PathVariable Long employeeId) {
+        Optional<EmployeeDTO> employeeDTO = employeeService.getEmployeeById(employeeId);
+        return employeeDTO
+                    .map(employeeDTO1 -> ResponseEntity.ok(employeeDTO1))
+                    .orElse(ResponseEntity.notFound().build());
     }
 
     // Request Parameter -> not always mandatory
@@ -32,22 +40,28 @@ public class EmployeeController {
 
     //  Lets build some more mappings
     @GetMapping(path = "/all")
-    public List<EmployeeDTO> getAllEmployees() {
-        return employeeService.getAllEmployees();
+    public ResponseEntity<List<EmployeeDTO>> getAllEmployees() {
+        return ResponseEntity.ok(employeeService.getAllEmployees());
     }
 
     @PostMapping(path = "/create")
-    public EmployeeDTO createNewEmployee(@RequestBody EmployeeDTO inputEmployee) {
-        return employeeService.createNewEmployee(inputEmployee);
+    public ResponseEntity<EmployeeDTO> createNewEmployee(@RequestBody @Valid EmployeeDTO inputEmployee) {
+        EmployeeDTO createdEmployee = employeeService.createNewEmployee(inputEmployee);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdEmployee);
     }
 
     @PutMapping(path = "/{employeeId}")
-    public EmployeeDTO updateEmployee(@PathVariable(name = "employeeId") Long id, @RequestBody EmployeeDTO employeeDTO) {
+    public EmployeeDTO updateEmployee(@PathVariable(name = "employeeId") Long id, @RequestBody @Valid EmployeeDTO employeeDTO) {
         return employeeService.updateEmployee(id, employeeDTO);
     }
 
     @DeleteMapping(path = "/{employeeId}")
     public boolean deleteEmployeeById(@PathVariable Long employeeId) {
         return employeeService.deleteEmployeeById(employeeId);
+    }
+
+    @PatchMapping(path = "/{employeeId}")
+    public EmployeeDTO patchEmployee(@PathVariable Long employeeId, @RequestBody Map<String, Object> updates) {
+        return employeeService.patchEmployee(employeeId, updates);
     }
 }

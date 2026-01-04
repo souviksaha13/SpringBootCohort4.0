@@ -4,9 +4,14 @@ import com.springbootCohort.Module2.dto.EmployeeDTO;
 import com.springbootCohort.Module2.entities.EmployeeEntity;
 import com.springbootCohort.Module2.repositories.EmployeeRepo;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.util.ReflectionUtils;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Field;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,9 +27,9 @@ public class EmployeeService {
 
 
 
-    public EmployeeDTO getEmployeeById(Long id) {
-        EmployeeEntity employeeEntity = employeeRepo.findById(id).orElse(null);
-        return modelMapper.map(employeeEntity, EmployeeDTO.class);
+    public Optional<EmployeeDTO> getEmployeeById(Long id) {
+        Optional<EmployeeEntity> employeeEntity = employeeRepo.findById(id);
+        return employeeEntity.map(employeeEntity1 -> modelMapper.map(employeeEntity1, EmployeeDTO.class));
     }
 
     public List<EmployeeDTO> getAllEmployees() {
@@ -63,7 +68,31 @@ public class EmployeeService {
         if(!exists) return false;
         employeeRepo.deleteById(id);
         exists = employeeRepo.existsById(id);
-        if(exists) return false;
-        return true;
+        return !exists;
+    }
+
+    public EmployeeDTO patchEmployee(Long employeeId, Map<String, Object> updates) {
+        boolean exists = employeeRepo.existsById(employeeId);
+        if(!exists) throw new IllegalArgumentException("No such employee exists to be updated");
+
+        EmployeeEntity existingEmployee = employeeRepo.findById(employeeId).orElse(null);
+        if(existingEmployee == null) return null;
+        System.out.println("Email before changing: " + existingEmployee.getEmail());
+        updates.forEach((field, value) -> {
+            //  we can manually change the fields but let's use Reflection (for learning purpose)
+            Field fieldToBeUpdated = ReflectionUtils.getRequiredField(EmployeeEntity.class, field);
+            fieldToBeUpdated.setAccessible(true);
+
+            // Special handling for LocalDate
+            if (fieldToBeUpdated.getType().equals(LocalDate.class)) {
+                value = LocalDate.parse(value.toString());
+            }
+
+            ReflectionUtils.setField(fieldToBeUpdated, existingEmployee, value);
+        });
+
+        System.out.println("Email after changing: " + existingEmployee.getEmail());
+
+        return modelMapper.map(employeeRepo.save(existingEmployee), EmployeeDTO.class);
     }
 }
