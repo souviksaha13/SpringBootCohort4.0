@@ -1,6 +1,7 @@
 package com.springbootCohort.Module2.controllers;
 
 import com.springbootCohort.Module2.dto.EmployeeDTO;
+import com.springbootCohort.Module2.exceptions.ResourceNotFoundException;
 import com.springbootCohort.Module2.services.EmployeeService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @RestController
@@ -26,10 +28,26 @@ public class EmployeeController {
     @GetMapping(path = "/{employeeId}")
     public ResponseEntity<EmployeeDTO> getEmployeeById(@PathVariable Long employeeId) {
         Optional<EmployeeDTO> employeeDTO = employeeService.getEmployeeById(employeeId);
+//        return employeeDTO
+//                    .map(employeeDTO1 -> ResponseEntity.ok(employeeDTO1))
+//                    .orElse(ResponseEntity.notFound().build());
+
+        //  For exception handling we can return
+//        return employeeDTO
+//                .map(employeeDTO1 -> ResponseEntity.ok(employeeDTO1))
+//                .orElseThrow(() -> new NoSuchElementException());
+
+        //  Or we can use our own custom exception handler
         return employeeDTO
-                    .map(employeeDTO1 -> ResponseEntity.ok(employeeDTO1))
-                    .orElse(ResponseEntity.notFound().build());
+                .map(employeeDTO1 -> ResponseEntity.ok(employeeDTO1))
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + employeeId));
     }
+
+    //  This exception handler works only under the class EmployeeController
+//    @ExceptionHandler(NoSuchElementException.class)
+//    public ResponseEntity<String> handleElementNotFound(NoSuchElementException exception) {
+//        return new ResponseEntity<>("Employee Not Found", HttpStatus.NOT_FOUND);
+//    }
 
     // Request Parameter -> not always mandatory
     @GetMapping(path = "")
