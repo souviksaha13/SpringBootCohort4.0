@@ -1,6 +1,7 @@
 package com.springbootCohort.Module3.repositories;
 
 import com.springbootCohort.Module3.entities.ProductEntity;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -22,4 +23,12 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     // or we can also write
     @Query("select p from ProductEntity p where p.title=:title or p.price=:price")
     Optional<ProductEntity> findByTitleOrPrice(String title, BigDecimal price);
+
+    //  ----------------------------------------------------------------------------------
+
+    List<ProductEntity> findByOrderByPrice();
+    //  but there is a issue -> for every field, we need to create a new method (like for Price, Quantity, etc, etc)
+
+    //  so we can use the following:
+    List<ProductEntity> findBy(Sort sort);
 }
